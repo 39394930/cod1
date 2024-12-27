@@ -1,48 +1,74 @@
 import jakarta.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import java.util.Properties;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-public class JMSBroker {
-    private static final String BROKER_URL = "tcp://localhost:61616"; // Brokerul ActiveMQ
-    private static final String TOPIC_NAME = "ImageTopic"; // Numele topicului pentru mesajele de imagine
+import java.io.IOException;
+import java.io.InputStreamReader;
 
-    public static void startBroker(String brokerURL) {
-        // Creăm o conexiune la brokerul ActiveMQ
-        try {
-            // Creăm o fabrică de conexiuni pentru ActiveMQ
-            ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerURL);
-            
-            // Creăm o conexiune la broker
-            Connection connection = connectionFactory.createConnection();
-            connection.start(); // Pornim conexiunea
-            
-            // Creăm o sesiune
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            
-            // Creăm topicul pe care publicatorul va publica mesajele
-            Topic topic = session.createTopic(TOPIC_NAME);
-            
-            // Creăm un producer care trimite mesaje pe topic
-            MessageProducer producer = session.createProducer(topic);
-            
-            // Publicăm un mesaj pe topic
-            String base64Image = "Base64EncodedImageString"; // Înlocuiește cu un șir Base64 valid
-            TextMessage message = session.createTextMessage(base64Image);
-            
-            // Trimitem mesajul
-            producer.send(message);
-            
-            System.out.println("Mesajul cu imaginea a fost trimis pe topicul " + TOPIC_NAME);
-            
-            // Închidem sesiunea și conexiunea
-            session.close();
-            connection.close();
-        } catch (JMSException e) {
-            e.printStackTrace();
-        }
+public class JMSBroker {
+
+    public static Properties getProp(String ip, String port) {
+        Properties props = new Properties();
+        props.setProperty(Context.INITIAL_CONTEXT_FACTORY,
+                "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
+        props.setProperty(Context.PROVIDER_URL, "tcp://" + ip + ":" + port);
+        return props;
     }
 
-    public static void main(String[] args) {
-        // Pornim brokerul și trimitem mesajul
-        startBroker(BROKER_URL);
+    public static void main(String args[]) {
+        Connection connection = null;
+        try {
+            InitialContext jndiContext = new InitialContext(getProp(args[0], args[1]));
+            ConnectionFactory connectionFactory = (ConnectionFactory) jndiContext.lookup("ConnectionFactory");
+            connection = connectionFactory.createConnection();
+            connection.setClientID("durable");
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Destination destination = session.createTopic("jms/topic/test");
+            MessageProducer producer = session.createProducer(destination);
+            
+            // Înlocuim TextMessage cu BytesMessage pentru mesajele binare
+            BytesMessage msg = session.createBytesMessage();
+            
+            // Mesajul binar: de exemplu, un simplu array de byte-uri
+            String messageContent = "Hello, This is a binary message!";
+            byte[] byteArray = messageContent.getBytes();
+            
+            // Setăm byte-urile în mesajul binar
+            msg.writeBytes(byteArray);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+            while (true) {
+                System.out.println("Enter Message to Topic or Press 'Q' for Close this Session");
+                String input = reader.readLine();
+                if ("Q".equalsIgnoreCase(input.trim())) {
+                    break;
+                }
+                // Scriem inputul utilizatorului ca mesaj binar
+                byte[] inputBytes = input.getBytes();
+                msg.clearBody();
+                msg.writeBytes(inputBytes);
+                
+                // Trimitem mesajul binar
+                producer.send(msg);
+            }
+        } catch (JMSException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NamingException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
