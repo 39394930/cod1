@@ -1,3 +1,4 @@
+package apachetomeejms;
 import jakarta.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
