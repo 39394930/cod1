@@ -3,7 +3,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Properties;
-
+import java.io.File;
+import java.nio.file.Files;
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
@@ -17,12 +18,11 @@ import javax.naming.NamingException;
 public class JMSPublicator {
 
     // Proprietăți pentru conectarea la broker
-    public static Properties getProp(String ip, String port) {
+    public static Properties getProp() {
         Properties props = new Properties();
         props.setProperty(Context.INITIAL_CONTEXT_FACTORY,
         "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
-        //props.setProperty(Context.PROVIDER_URL, "tcp://localhost:61617");
-            props.setProperty(Context.PROVIDER_URL, "tcp://"+ip+":"+port);
+            props.setProperty(Context.PROVIDER_URL, "tcp://localhost:61617");
         return props;
     }
     
