@@ -1,12 +1,10 @@
 package apachetomeejms;
 
-import java.util.Base64;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Properties;
-import java.io.File;
-import java.nio.file.Files;
+
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
@@ -18,69 +16,71 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-public class JMSPublicator {
+//import org.apache.activemq.broker.BrokerService;
 
-    // Proprietăți pentru conectarea la broker
-    public static Properties getProp(String ip, String port) {
-        Properties props = new Properties();
-        props.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
-        props.setProperty(Context.PROVIDER_URL, "tcp://"+ip+":"+port);
-        return props;
-    }
+public class JMSPublicator{
 
-    // Citirea fișierului imagine și transformarea în Base64
-    public static String encodeImageToBase64(String imagePath) throws IOException {
-        byte[] imageBytes = Files.readAllBytes(new File(imagePath).toPath());
-        return Base64.getEncoder().encodeToString(imageBytes);
-    }
+ public static Properties getProp(String ip, String port) {
+	 Properties props = new Properties();
+	 props.setProperty(Context.INITIAL_CONTEXT_FACTORY,
+	 "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
+	 //props.setProperty(Context.PROVIDER_URL, "tcp://localhost:61617");
+         props.setProperty(Context.PROVIDER_URL, "tcp://"+ip+":"+port);
+	 return props;
+ }
 
-    public static void main(String[] args) {
-        Connection connection = null;
-        String imagePath = "C:\\Users\\Stefania\\Downloads\\Imagine.jpg";  // Calea completă către fișierul imagine
+// public static void initBroker() throws Exception {
+//	 BrokerService broker = new BrokerService();
+//	 // configure the broker
+//	 broker.addConnector("tcp://localhost:61617");
+//	 broker.start();
+// }
 
-        try {
-            InitialContext jndiContext = new InitialContext(getProp("localhost", "61617"));
-            ConnectionFactory connectionFactory = (ConnectionFactory) jndiContext.lookup("ConnectionFactory");
-            connection = connectionFactory.createConnection();
-            connection.setClientID("durable");
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Destination destination = session.createTopic("jms/topic/test");
-            MessageProducer producer = session.createProducer(destination);
-            
-            // Codifică imaginea în Base64
-            String base64Image = encodeImageToBase64(imagePath);
-            
-            // Creează și trimite mesajul
-            TextMessage textMessage = session.createTextMessage(base64Image);
-            producer.send(textMessage);
-            System.out.println("Imaginea a fost trimisă în format Base64 către topic!");
-            
-            // Citirea de la utilizator pentru a închide sesiunea
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            while (true) {
-                System.out.println("Press 'Q' pentru a închide sesiunea.");
-                String input = reader.readLine();
-                if ("Q".equalsIgnoreCase(input.trim())) {
-                    break;
-                }
-            }
+ public static void main(String args[]) {
 
-        } catch (JMSException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NamingException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (JMSException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+	 Connection connection = null;
+	 try {
+//		 initBroker();
+		 InitialContext jndiContext = new InitialContext(getProp(args[0], args[1]));
+		 ConnectionFactory connectionFactory = (ConnectionFactory) jndiContext
+		 .lookup("ConnectionFactory");
+		 connection = connectionFactory.createConnection();
+		 connection.setClientID("durable");
+		 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+		 Destination destination = session.createTopic("jms/topic/test");
+		 MessageProducer producer = session.createProducer(destination);
+		 TextMessage msg = session.createTextMessage();
+		 msg.setText("Hello, This is JMS example !!");
+		 BufferedReader reader = new BufferedReader(new InputStreamReader(
+		 System.in));
+
+	 while (true) {
+		 System.out
+		 .println("Enter Message to Topic or Press 'Q' for Close this Session");
+		 String input = reader.readLine();
+		 if ("Q".equalsIgnoreCase(input.trim())) {
+		 	break;
+		 }
+		 msg.setText(input);
+		 producer.send(msg);
+	 }
+	 } catch (JMSException e) {
+	 	e.printStackTrace();
+	 } catch (IOException e) {
+	 	e.printStackTrace();
+	 } catch (NamingException e) {
+	 	e.printStackTrace();
+	 } catch (Exception e) {
+	 	e.printStackTrace();
+	 } finally {
+		 try {
+		 	if (connection != null) {
+		 		connection.close();
+		 	}
+		 } catch (JMSException e) {
+		 	e.printStackTrace();
+		 }
+	 }
+
+ }
 }

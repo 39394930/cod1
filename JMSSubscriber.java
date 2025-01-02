@@ -1,90 +1,115 @@
 package apachetomeejms;
+
+package apachetomeejms;
+/*
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+
+//import javax.jms.Connection;
+//import javax.jms.ConnectionFactory;
+
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.TextMessage;
+
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
+*/
+
 import jakarta.jms.*;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
 import java.util.Properties;
+
 import org.apache.activemq.ActiveMQConnectionFactory;
-import java.io.FileOutputStream;
+
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class JMSSubscriber {
+ protected static final String url = "tcp://localhost:61617";
+ public static void main(String[] args) {
+	String topicName = null;
+	Context jndiContext = null;
+	TopicConnectionFactory topicConnectionFactory = null;
+	TopicConnection topicConnection = null;
+	TopicSession topicSession = null;
+	Topic topic = null;
+	TopicSubscriber topicSubscriber = null;
+	TextListener topicListener = null;
+	//TextMessage message = null;
+	InputStreamReader inputStreamReader = null;
+	char answer = '\0';
+	/*	
+		if(args.length != 1) {
+			System.out.println("Usage: java SimpleTopicSubscriber <topic-name>");
+			System.exit(1);
+		}
+	*/	
+	topicName = new String(args[1]);
+        //topicName = new String("jms/topic/test");
+	System.out.println("Topic name = "+topicName);
+		
+	//JNDI context look-up + look-up factory & topic
+	try {
+                Properties props = new Properties();
+	 	 props.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
+	 	 //props.setProperty(Context.PROVIDER_URL, "tcp://localhost:61617");
+		props.setProperty(Context.PROVIDER_URL, args[0]);
 
-    protected static final String url = "tcp://localhost:61617";
-
-    public static void main(String[] args) {
-        String topicName = "jms/topic/test";  // Valoare implicită
-        Context jndiContext = null;
-        TopicConnectionFactory topicConnectionFactory = null;
-        TopicConnection topicConnection = null;
-        TopicSession topicSession = null;
-        Topic topic = null;
-        TopicSubscriber topicSubscriber = null;
-
-        // Verifică dacă argumentele sunt suficiente
-        if (args.length > 0) {
-            topicName = args[0]; // Folosește primul argument pentru numele topicului
-        }
-        
-        System.out.println("Topic name = " + topicName);
-
-        try {
-            // Setează proprietățile pentru JNDI
-            Properties props = new Properties();
-            props.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
-            props.setProperty(Context.PROVIDER_URL, url);
-
-            jndiContext = new InitialContext(props);
-            topicConnectionFactory = (TopicConnectionFactory) jndiContext.lookup("ConnectionFactory");
-            topicConnection = topicConnectionFactory.createTopicConnection();
-            topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-            topic = topicSession.createTopic(topicName);
-
-            topicSubscriber = topicSession.createSubscriber(topic);
-
-            // Crearea unui MessageListener care primește mesajele
-            topicSubscriber.setMessageListener(new MessageListener() {
-                @Override
-                public void onMessage(Message message) {
-                    if (message instanceof BytesMessage) {
-                        try {
-                            // Extrage mesajul BytesMessage
-                            BytesMessage bytesMessage = (BytesMessage) message;
-                            byte[] imageBytes = new byte[(int) bytesMessage.getBodyLength()];
-                            bytesMessage.readBytes(imageBytes);
-
-                            // Salvează imaginea pe disc
-                            try (FileOutputStream fileOutputStream = new FileOutputStream("received_image.jpg")) {
-                                fileOutputStream.write(imageBytes);
-                            }
-                            System.out.println("Imaginea a fost salvată.");
-                        } catch (JMSException | IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-
-            topicConnection.start();
-
-            // Așteaptă mesaje și permite închiderea programului
-            System.out.println("Aștept mesaje...");
-            System.in.read(); // Așteaptă apăsarea unei taste pentru a opri programul
-
-        } catch (NamingException | JMSException | IOException e) {
-            e.printStackTrace();
-        } finally {
-            // Închide conexiunea
-            try {
-                if (topicConnection != null) {
-                    topicConnection.close();
-                }
-            } catch (JMSException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+		jndiContext = new InitialContext(props);
+		//jndiContext = new InitialContext();
+			
+		topicConnectionFactory = (TopicConnectionFactory)jndiContext.lookup("ConnectionFactory");
+		//topic = (Topic)jndiContext.lookup(topicName);
+			
+	} catch(NamingException ne) {
+		ne.printStackTrace();
+		System.exit(2);
+	}
+		
+	try {
+		topicConnection = topicConnectionFactory.createTopicConnection();
+		topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+		topic = topicSession.createTopic("jms/topic/test");
+		topicSubscriber = topicSession.createSubscriber(topic);
+			
+		topicListener = new TextListener();
+		topicSubscriber.setMessageListener(topicListener);
+		topicConnection.start();
+			
+			System.out.println("To end program, insert q + CR/LF");
+			inputStreamReader = new InputStreamReader(System.in);
+			while(!(answer == 'q')) {
+				try {
+					answer = (char) inputStreamReader.read();
+				} catch(IOException ioe) {
+					ioe.printStackTrace();
+				}
+			}
+		} catch(JMSException jmse) {
+			jmse.printStackTrace();
+		} finally {
+			if(topicConnection != null) {
+				try {
+					topicConnection.close();
+				} catch (JMSException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }
+
+
 class TextListener implements MessageListener {
 
 	@Override

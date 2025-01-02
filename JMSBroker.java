@@ -1,74 +1,45 @@
-import jakarta.jms.*;
+package apachetomeejms;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Properties;
+
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.util.Properties;
-import org.apache.activemq.ActiveMQConnectionFactory;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
+import org.apache.activemq.broker.BrokerService;
 
 public class JMSBroker {
+	public static void initBroker(String ip, String port) throws Exception {
+         BrokerService broker = new BrokerService();
+         // configure the broker
+         broker.addConnector("tcp://"+ip+":"+port);
+         broker.start();
+ 	}
 
-    public static Properties getProp(String ip, String port) {
-        Properties props = new Properties();
-        props.setProperty(Context.INITIAL_CONTEXT_FACTORY,
-                "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
-        props.setProperty(Context.PROVIDER_URL, "tcp://" + ip + ":" + port);
-        return props;
-    }
+	public static void main(String[] args) {
+		//try { initBroker("127.0.0.1", "61617"); } catch(Exception e) {e.printStackTrace();}
+		try { initBroker(args[0], args[1]); } catch(Exception e) {e.printStackTrace();}
 
-    public static void main(String args[]) {
-        Connection connection = null;
-        try {
-            InitialContext jndiContext = new InitialContext(getProp(args[0], args[1]));
-            ConnectionFactory connectionFactory = (ConnectionFactory) jndiContext.lookup("ConnectionFactory");
-            connection = connectionFactory.createConnection();
-            connection.setClientID("durable");
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Destination destination = session.createTopic("jms/topic/test");
-            MessageProducer producer = session.createProducer(destination);
-            
-            // Înlocuim TextMessage cu BytesMessage pentru mesajele binare
-            BytesMessage msg = session.createBytesMessage();
-            
-            // Mesajul binar: de exemplu, un simplu array de byte-uri
-            String messageContent = "Hello, This is a binary message!";
-            byte[] byteArray = messageContent.getBytes();
-            
-            // Setăm byte-urile în mesajul binar
-            msg.writeBytes(byteArray);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-            while (true) {
-                System.out.println("Enter Message to Topic or Press 'Q' for Close this Session");
-                String input = reader.readLine();
-                if ("Q".equalsIgnoreCase(input.trim())) {
-                    break;
-                }
-                // Scriem inputul utilizatorului ca mesaj binar
-                byte[] inputBytes = input.getBytes();
-                msg.clearBody();
-                msg.writeBytes(inputBytes);
-                
-                // Trimitem mesajul binar
-                producer.send(msg);
-            }
-        } catch (JMSException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NamingException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (JMSException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+		while (true) {
+                 System.out.println("Type 'Q' for closing JMS Broker service from ActiveMQ - KahaDB - Apache TomEE Server");
+                 try {
+		   String input = reader.readLine();
+                   if ("Q".equalsIgnoreCase(input.trim())) {
+                        break;
+		   }
+                 } catch (IOException ioe) {}
+         	}
+	}
 }
