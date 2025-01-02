@@ -21,10 +21,10 @@ import javax.naming.NamingException;
 public class JMSPublicator {
 
     // Proprietăți pentru conectarea la broker
-    public static Properties getProp() {
+    public static Properties getProp(String ip, String port) {
         Properties props = new Properties();
         props.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
-        props.setProperty(Context.PROVIDER_URL, "tcp://localhost:61617");
+        props.setProperty(Context.PROVIDER_URL, "tcp://"+ip+":"+port);
         return props;
     }
 
@@ -39,7 +39,7 @@ public class JMSPublicator {
         String imagePath = "C:\\Users\\Stefania\\Downloads\\Imagine.jpg";  // Calea completă către fișierul imagine
 
         try {
-            InitialContext jndiContext = new InitialContext(getProp());
+            InitialContext jndiContext = new InitialContext(getProp("localhost", "61617"));
             ConnectionFactory connectionFactory = (ConnectionFactory) jndiContext.lookup("ConnectionFactory");
             connection = connectionFactory.createConnection();
             connection.setClientID("durable");
