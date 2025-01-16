@@ -12,7 +12,7 @@ import javax.naming.NamingException;
 
 import org.apache.activemq.broker.BrokerService;
 
-public class JMSBrokerStart_JakartaTomEE {
+public class JMSBroker {
 	public static void initBroker(String ip, String port) throws Exception {
          BrokerService broker = new BrokerService();
          // configure the broker
