@@ -1,24 +1,18 @@
-package apachetomeejms;
+package javalin;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
-import jakarta.jms.Connection;
-import jakarta.jms.ConnectionFactory;
-import jakarta.jms.Destination;
-import jakarta.jms.JMSException;
-import jakarta.jms.MessageProducer;
-import jakarta.jms.Session;
-import jakarta.jms.TextMessage;
+import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.apache.activemq.broker.BrokerService;
 
-public class JMSBroker {
+public class JMSBrokerStart_JakartaTomEE {
 	public static void initBroker(String ip, String port) throws Exception {
          BrokerService broker = new BrokerService();
          // configure the broker
