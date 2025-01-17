@@ -19,10 +19,10 @@ public class ImageImplement extends UnicastRemoteObject implements ImageProcesso
             // Decodificăm imaginea din Base64
             byte[] imageData = Base64.getDecoder().decode(base64Image);
 
-            // Salvăm imaginea ca fișier pe server
-            try (FileOutputStream fos = new FileOutputStream("received_image_part1.jpg")) {
+            // Salvăm imaginea ca fișier pe server (C5)
+            try (FileOutputStream fos = new FileOutputStream("received_image_part2.jpg")) {
                 fos.write(imageData);
-                System.out.println("Prima jumătate a imaginii a fost procesată și salvată!");
+                System.out.println("A doua jumătate a imaginii a fost procesată și salvată pe C5!");
             }
         } catch (IOException e) {
             System.err.println("Eroare la procesarea imaginii: " + e.getMessage());
