@@ -1,4 +1,4 @@
-package javalin;
+package apachetomeejms;
 
 import jakarta.jms.*;
 import javax.naming.Context;
